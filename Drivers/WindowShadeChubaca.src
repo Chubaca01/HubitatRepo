@@ -20,7 +20,7 @@ metadata {
 		capability "Actuator"
 		capability "Window Shade"
 		//capability "Window Shade Preset"
-		capability "Switch Level"
+		//capability "Switch Level"
         capability "Battery"
         capability "Refresh"
         capability "Health Check"
@@ -38,7 +38,7 @@ metadata {
 				attributeState "unknown", label:'${name}', action:"open", icon:"st.shades.shade-closing", backgroundColor:"#ffffff", nextState:"opening"
 			}
 			tileAttribute ("device.level", key: "SLIDER_CONTROL") {
-				attributeState "level", action:"setLevel"
+				attributeState "position", action:"setPosition"
 			}
 		}
 
@@ -129,7 +129,7 @@ private handleLevelReport(hubitat.zwave.Command cmd) {
         descriptionText = "${device.displayName} shade is ${level}% open"
     }
     checkLevelReport(level)
-    def levelEvent = createEvent(name: "level", value: level, unit: "%", displayed: false)
+    def levelEvent = createEvent(name: "position", value: level, unit: "%", displayed: false)
     def stateEvent = createEvent(name: "windowShade", value: shadeValue, descriptionText: descriptionText, isStateChange: levelEvent.isStateChange)
 
     def result = [stateEvent, levelEvent]
@@ -196,6 +196,15 @@ def setLevel(value, duration = null) {
     zwave.basicV1.basicSet(value: level).format()
 }
 
+def setPosition(value, duration = null) {
+    log.debug "setLevel(${value.inspect()})"
+    Integer level = value as Integer
+    level = switchDirection ? 99-level : level
+    if (level < 0) level = 0
+    if (level > 99) level = 99
+    levelChangeFollowUp(level)
+    zwave.basicV1.basicSet(value: level).format()
+}
 
 def ping() {
     zwave.switchMultilevelV1.switchMultilevelGet().format()
